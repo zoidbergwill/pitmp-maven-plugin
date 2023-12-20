@@ -1,108 +1,83 @@
 package org.pitmp.maven.verification;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
-
 import org.apache.maven.it.VerificationException;
 import org.apache.maven.it.Verifier;
 import org.apache.maven.it.util.ResourceExtractor;
-import org.apache.maven.shared.utils.io.FileUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.pitest.maven.PmpMojo;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
+import java.util.stream.Stream;
+
 @RunWith(Parameterized.class)
 public class PmpMojoIT {
 
-	private static final String PITMP_VERSION = getProperty("pitmp_version");
-	private static final String PIT_VERSION = getProperty("pit_version");
-	private static final String LOG_FILENAME = "log.out";
+    private static final String PITMP_VERSION = getProperty("pitmp_version");
+    private static final String PIT_VERSION = getProperty("pit_version");
+    private static final String LOG_FILENAME = "log.out";
+    private Verifier verifier;
+    @ParameterizedTest
+    @ArgumentsSource(PomPathsArgumentsProvider.class)
+    public void testDefaultConfiguration(String projectPath, String pomPath, @TempDir Path testFolder) throws Exception {
+        prepare(projectPath, pomPath, testFolder);
+        // goals
+        List<String> goals = new ArrayList<String>();
+        goals.add("clean");
+        goals.add("install");
+        goals.add("pitmp:run");
+        goals.add("pitmp:descartes");
+        // client options
+        List<String> cliOptions = new ArrayList<String>();
+        cliOptions.add("-Dpitest-maven-version=" + PIT_VERSION);
+        cliOptions.add("-Dpitmp-maven-plugin-version=" + PITMP_VERSION);
+        cliOptions.add("-DoutputFormats=XML");
+        verifier.setCliOptions(cliOptions);
+        verifier.executeGoals(goals);
+        verifier.verifyErrorFreeLog();
+    }
 
-	@Parameter(0)
-	public String projectPath;
+    private void prepare(String testPath, String pomPath, Path testFolder) throws IOException, VerificationException {
+        String path = ResourceExtractor.extractResourcePath(getClass(), testPath, testFolder.toFile(), true)
+                .getAbsolutePath();
+        verifier = new Verifier(path);
+        verifier.setAutoclean(true);
+        verifier.setDebug(true);
+        verifier.setLogFileName(LOG_FILENAME);
 
-	@Parameter(1)
-	public String pomPath;
+        Files.move(Path.of(path + File.separator + pomPath), Path.of(path + File.separator + "pom.xml"));
+        new File(testFolder.toFile().getAbsoluteFile() + testPath);
+    }
 
-	private Verifier verifier;
-
-	@Rule
-	public TemporaryFolder testFolder = new TemporaryFolder();
-
-	@Rule
-	public TestName testName = new TestName();
-
-	@Parameters(name = "{index}: Project: {0}, Pom Path: {1}")
-	public static Collection<Object[]> configuration() {
-		return Arrays.asList(new Object[][] { 
-			    { "/dhell", "pom.xml.pitmp.conf1.xml" },
-				{ "/dhell", "pom.xml.pitmp.noconf.xml" },
-
-				{ "/dhell5", "pom.xml.pitmp.conf1.xml" },
-				{ "/dhell5", "pom.xml.pitmp.noconf.xml" },
-
-				{ "/dnoo", "pom.xml.pitmp.conf1.xml" },
-				{ "/dnoo", "pom.xml.pitmp.noconf.xml" },
-
-				{ "/dnoo5", "pom.xml.pitmp.conf1.xml" },
-				{ "/dnoo5", "pom.xml.pitmp.noconf.xml" }, 
-				});
-	}
-
-	@Test
-	public void testDefaultConfiguration() throws Exception {
-		prepare(projectPath);
-		// goals
-		List<String> goals = new ArrayList<String>();
-		goals.add("clean");
-		goals.add("install");
-		goals.add("pitmp:run");
-		goals.add("pitmp:descartes");
-		// client options
-		List<String> cliOptions = new ArrayList<String>();
-		cliOptions.add("-Dpitest-maven-version=" + PIT_VERSION);
-		cliOptions.add("-Dpitmp-maven-plugin-version=" + PITMP_VERSION);
-		cliOptions.add("-DoutputFormats=XML");
-		verifier.setCliOptions(cliOptions);
-		verifier.executeGoals(goals);
-		verifier.verifyErrorFreeLog();
-	}
-
-	private File prepare(String testPath) throws IOException, VerificationException {
-		String path = ResourceExtractor.extractResourcePath(getClass(), testPath, testFolder.getRoot(), true)
-				.getAbsolutePath();
-		verifier = new Verifier(path);
-		verifier.setAutoclean(true);
-		verifier.setDebug(true);
-		verifier.setLogFileName(LOG_FILENAME);
-
-		FileUtils.rename(new File(path + File.separator + pomPath), new File(path + File.separator + "pom.xml"));
-		return new File(testFolder.getRoot().getAbsolutePath() + testPath);
-	}
-
-	private static String getProperty(String propertyName) {
-		String path = "/version.prop";
-		InputStream stream = PmpMojo.class.getResourceAsStream(path);
-		Properties props = new Properties();
-		try {
-			props.load(stream);
-			stream.close();
-			return (String) props.get(propertyName);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    private static String getProperty(String propertyName) {
+        String path = "/version.prop";
+        InputStream stream = PmpMojo.class.getResourceAsStream(path);
+        Properties props = new Properties();
+        try {
+            props.load(stream);
+            if (stream != null) {
+                stream.close();
+            }
+            return (String) props.get(propertyName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }

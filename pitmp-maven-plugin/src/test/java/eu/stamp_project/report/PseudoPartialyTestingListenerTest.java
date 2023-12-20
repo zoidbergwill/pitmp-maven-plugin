@@ -1,6 +1,6 @@
 package eu.stamp_project.report;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.pitest.classinfo.ClassName;
 import org.pitest.mutationtest.ClassMutationResults;
 import org.pitest.mutationtest.DetectionStatus;
@@ -15,6 +15,7 @@ import java.util.Collection;
 
 import static org.pitest.mutationtest.DetectionStatus.KILLED;
 import static org.pitest.mutationtest.DetectionStatus.SURVIVED;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PseudoPartialyTestingListenerTest {
 
@@ -33,33 +34,37 @@ public class PseudoPartialyTestingListenerTest {
 		return mutations;
 	}
 
-	@Test(expected = RuntimeException.class)
+	@Test
 	public void shouldBeAbovePseudoTestedThresold() {
-		MethodThresholds.getInstance().setPseudoTestedThresold(1);
-		Collection<MutationResult> c = new ArrayList<MutationResult>();
-		// TESTED
-		c.addAll(record("method1", KILLED, KILLED, KILLED));
-		// PSEUDO_TESTED
-		c.addAll(record("method2", SURVIVED, SURVIVED, SURVIVED));
-		// PSEUDO_TESTED
-		c.addAll(record("method3", SURVIVED, SURVIVED, SURVIVED));
-		PseudoPartialyTestingListener l = new PseudoPartialyTestingListener(null);
-		l.handleMutationResult(new ClassMutationResults(c));
-		l.runEnd();
+		assertThrows(RuntimeException.class, () -> {
+			MethodThresholds.getInstance().setPseudoTestedThresold(1);
+			Collection<MutationResult> c = new ArrayList<MutationResult>();
+			// TESTED
+			c.addAll(record("method1", KILLED, KILLED, KILLED));
+			// PSEUDO_TESTED
+			c.addAll(record("method2", SURVIVED, SURVIVED, SURVIVED));
+			// PSEUDO_TESTED
+			c.addAll(record("method3", SURVIVED, SURVIVED, SURVIVED));
+			PseudoPartialyTestingListener l = new PseudoPartialyTestingListener(null);
+			l.handleMutationResult(new ClassMutationResults(c));
+			l.runEnd();
+		});
 	}
 
-	@Test(expected = RuntimeException.class)
+	@Test
 	public void shouldBeAbovePartialyTestedThresold() {
-		MethodThresholds.getInstance().setPartialyTestedThresold(1);
-		Collection<MutationResult> c = new ArrayList<MutationResult>();
-		// TESTED
-		c.addAll(record("method1", KILLED, KILLED, KILLED));
-		// PARTIALLY_TESTED
-		c.addAll(record("method2", KILLED, SURVIVED, KILLED));
-		// PARTIALLY_TESTED
-		c.addAll(record("method3", KILLED, SURVIVED, KILLED));
-		PseudoPartialyTestingListener l = new PseudoPartialyTestingListener(null);
-		l.handleMutationResult(new ClassMutationResults(c));
-		l.runEnd();
+		assertThrows(RuntimeException.class, () -> {
+			MethodThresholds.getInstance().setPartialyTestedThresold(1);
+			Collection<MutationResult> c = new ArrayList<MutationResult>();
+			// TESTED
+			c.addAll(record("method1", KILLED, KILLED, KILLED));
+			// PARTIALLY_TESTED
+			c.addAll(record("method2", KILLED, SURVIVED, KILLED));
+			// PARTIALLY_TESTED
+			c.addAll(record("method3", KILLED, SURVIVED, KILLED));
+			PseudoPartialyTestingListener l = new PseudoPartialyTestingListener(null);
+			l.handleMutationResult(new ClassMutationResults(c));
+			l.runEnd();
+		});
 	}
 }

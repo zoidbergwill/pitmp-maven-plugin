@@ -14,7 +14,7 @@
 
 
 ## Quick start
-* on command line  
+* on command line
   - Compile your project
   ```
   mvn install
@@ -28,7 +28,7 @@
   mvn eu.stamp-project:pitmp-maven-plugin:descartes
   ```
 
-* with Maven  
+* with Maven
  Modify your `pom.xml`,
   - for PIT include:
   ```
@@ -51,7 +51,7 @@
   ```
 #### Note ####
 ```
-PitMP works only from the top level directory of your project.  
+PitMP works only from the top level directory of your project.
 "cd <my_directory> ; mvn eu.stamp-project:pitmp-maven-plugin:run" will NOT work.
 
 c.f. properties targetModules and skippedModules to specify in which directories you want to run PitMP.
@@ -67,18 +67,18 @@ To know more about PIT: http://pitest.org
 ## How does PitMP work?
 
 PIT takes a test suite, a set of classes to be mutated and a set of mutation operators
-and computes a line coverage and a mutation coverage:    
+and computes a line coverage and a mutation coverage:
 ![PIT inputs and outputs](docs/pit_inputs_outputs.png)
 
 PIT mutates only the classes defined in the same module than the
-test suite:    
+test suite:
 ![PIT project](docs/pit_project.png)
 
 PitMP runs PIT on every test suite, mutating classes of all dependencies of modules
-located in the same project tree:    
-![PitMP project](docs/pmp_project_1.png)  
-then:  
-![PitMP project](docs/pmp_project_2.png)  
+located in the same project tree:
+![PitMP project](docs/pmp_project_1.png)
+then:
+![PitMP project](docs/pmp_project_2.png)
 etc...
 
 PitMP just extends PIT, it doesn't rewrite any feature, so all PIT's properties can
@@ -95,8 +95,8 @@ PIT produces a report that includes:
 ![PIT summary](docs/pit_summary_dnoo.png)
 * a detail report for each class combining line coverage and mutation coverage
 information:
-![PIT detail](docs/pit_detail_dnoo.png)  
-*Light green shows line coverage, dark green shows mutation coverage.*  
+![PIT detail](docs/pit_detail_dnoo.png)
+*Light green shows line coverage, dark green shows mutation coverage.*
 *Light pink show lack of line coverage, dark pink shows lack of mutation coverage.*
 
 
@@ -147,7 +147,7 @@ You can configure your project in the root pom.xml, in the section \<plugins\>:
 
 * targetModules: to run PIT only on specified modules, this
   attribute filters directories where to run PIT, not classes
-  to be mutated  
+  to be mutated
   You can use the property "targetModules" in the pom.xml:
   ```
           <targetModules>
@@ -163,7 +163,7 @@ You can configure your project in the root pom.xml, in the section \<plugins\>:
 
 * skippedModules: to skip specified modules when running PIT, this
   attribute filters directories where to run PIT, not classes
-  to be mutated  
+  to be mutated
   You can use the property "skippedModules" in the pom.xml:
   ```
           <skippedModules>
@@ -177,7 +177,7 @@ You can configure your project in the root pom.xml, in the section \<plugins\>:
   ```
 
 * targetDependencies: take only into account classes of targetDependencies, i.e.
-  only code in targetDependencies will be mutated; it impacts PIT's targetClasses  
+  only code in targetDependencies will be mutated; it impacts PIT's targetClasses
   Note that only targetDependencies shall contains only modules of the project
 
 * ignoredDependencies: ignore classes of ignoredDependencies, i.e.
@@ -263,15 +263,20 @@ Notes concerning additional options:
 
 
 ## Releases
-For PIT release...         | use PitMP release... | how to use PitMP
--------------------------- | -------------------- | ----------------
-1.4.7                      | 1.3.7                | Maven Central
-1.4.2                      | 1.3.5, 1.3.6         | Maven Central
-1.4.0                      | 1.3.4, 1.3.3, 1.3.2, 1.3.1, 1.3.0, 1.2.0 | Maven Central
-1.3.2                      | 1.1.6, 1.1.5         | Maven Central
-1.3.1                      | 1.1.4                | Maven Central
-1.2.1, 1.2.2, 1.2.4, 1.2.5, 1.3.0  | not tested   |
-1.2.0, 1.2.3               | 1.0.1                | git clone & mvn install
+
+| For PIT release...                  | use PitMP release...                      | how to use PitMP        |
+|-------------------------------------|-------------------------------------------|-------------------------|
+| 1.15.3                              | LATEST                                    | Maven Central           |
+| 1.4.7                               | 1.3.7                                     | Maven Central           |
+| 1.4.2                               | 1.3.5, 1.3.6                              | Maven Central           |
+| 1.4.0                               | 1.3. 4, 1.3.3, 1.3.2, 1.3.1, 1.3.0, 1.2.0 | Maven Central           |
+| 1.3.2                               | 1.1.6, 1.1.5                              | Maven Central           |
+| 1.3.1                               | 1.1.4                                     | Maven Central           |
+| 1.2.1, 1.2.2, 1.2.4, 1.2.5, 1.3.0   | not tested                                |                         |
+| 1.2.0, 1.2.3                        | 1.0.1                                     | git clone & mvn install |
+
+* pitmp-maven-plugin-LATEST
+  - Dependency on Descartes v1.3.2
 
 * pitmp-maven-plugin-1.3.7
   - Dependency on Descartes v1.2.5

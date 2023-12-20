@@ -1,9 +1,10 @@
 package org.pitest.maven;
 
-import java.io.File;
-import java.util.*;
-import java.util.function.Predicate;
-
+import eu.stamp_project.PmpContext;
+import eu.stamp_project.plugins.PmpNonEmptyProjectCheck;
+import eu.stamp_project.plugins.PmpProject;
+import eu.stamp_project.report.MethodThresholds;
+import jakarta.inject.Inject;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -11,21 +12,24 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.internal.MavenRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
 import org.pitest.mutationtest.config.PluginServices;
 import org.pitest.mutationtest.tooling.CombinedStatistics;
 
-import eu.stamp_project.PmpContext;
-import eu.stamp_project.plugins.PmpNonEmptyProjectCheck;
-import eu.stamp_project.plugins.PmpProject;
-import eu.stamp_project.report.MethodThresholds;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 
 // **********************************************************************
 @Mojo(name = "run", defaultPhase = LifecyclePhase.VERIFY,
-    requiresDependencyResolution = ResolutionScope.TEST, threadSafe
-    = true)
-
-public class PmpMojo extends AbstractPitMojo
-{
+        requiresDependencyResolution = ResolutionScope.TEST, threadSafe
+        = true)
+public class PmpMojo extends AbstractPitMojo {
     // **********************************************************************
     // properties
     // **********************************************************************
@@ -67,149 +71,126 @@ public class PmpMojo extends AbstractPitMojo
     // public
     // **********************************************************************
     // ******** attributes
-    public File getBaseDir()
-    {
-        return(detectBaseDir());
+    public File getBaseDir() {
+        return (detectBaseDir());
     }
 
     // **********************************************************************
-    public boolean shouldDisplayOnly()
-    {
-        return(_ShouldDisplayOnly);
+    public boolean shouldDisplayOnly() {
+        return (_ShouldDisplayOnly);
     }
 
     // **********************************************************************
-    public ArrayList<String> getTargetModules()
-    {
-        return(targetModules);
+    public ArrayList<String> getTargetModules() {
+        return (targetModules);
     }
 
     // **********
-    public void setTargetModules(ArrayList<String> newClasses)
-    {
+    public void setTargetModules(ArrayList<String> newClasses) {
         targetModules = newClasses;
     }
 
     // **********
-    public boolean isInTargetModules(String name)
-    {
+    public boolean isInTargetModules(String name) {
         boolean result = false;
 
-        for (int i = 0; i < getTargetModules().size() && ! result; i++)
-        {
+        for (int i = 0; i < getTargetModules().size() && !result; i++) {
             result = getTargetModules().get(i).equals(name);
         }
 
-        return(result);
+        return (result);
     }
 
     // **********************************************************************
-    public ArrayList<String> getSkippedModules()
-    {
-        return(skippedModules);
+    public ArrayList<String> getSkippedModules() {
+        return (skippedModules);
     }
 
     // **********
-    public void setSkippedModules(ArrayList<String> newClasses)
-    {
+    public void setSkippedModules(ArrayList<String> newClasses) {
         skippedModules = newClasses;
     }
 
     // **********
-    public boolean isInSkippedModules(MavenProject module)
-    {
+    public boolean isInSkippedModules(MavenProject module) {
         return isInSkippedModules(module.getArtifactId());
     }
 
-    public boolean isInSkippedModules(String name)
-    {
+    public boolean isInSkippedModules(String name) {
         boolean result = false;
 
-        for (int i = 0; i < getSkippedModules().size() && ! result; i++)
-        {
+        for (int i = 0; i < getSkippedModules().size() && !result; i++) {
             result = getSkippedModules().get(i).equals(name);
         }
 
-        return(result);
+        return (result);
     }
 
     // **********************************************************************
-    public ArrayList<String> getTargetDependencies()
-    {
+    public ArrayList<String> getTargetDependencies() {
         // cael: debug only
         // if (targetDependencies == null)
         // {
         //     System.out.println("######## !!!!!! targetDependencies == null");
         // }
-        return(targetDependencies);
+        return (targetDependencies);
     }
 
     // **********
-    public void setTargetDependencies(ArrayList<String> moduleList)
-    {
+    public void setTargetDependencies(ArrayList<String> moduleList) {
         targetDependencies = moduleList;
     }
 
     // **********
-    public boolean isInTargetDependencies(String name)
-    {
+    public boolean isInTargetDependencies(String name) {
         boolean result = false;
 
-        for (int i = 0; i < getTargetDependencies().size() && ! result; i++)
-        {
+        for (int i = 0; i < getTargetDependencies().size() && !result; i++) {
             result = getTargetDependencies().get(i).equals(name);
         }
 
-        return(result);
+        return (result);
     }
 
     // **********************************************************************
-    public ArrayList<String> getIgnoredDependencies()
-    {
+    public ArrayList<String> getIgnoredDependencies() {
         // cael: debug only
         // if (ignoredDependencies == null)
         // {
         //     System.out.println("######## !!!!!! ignoredDependencies == null");
         // }
-        return(ignoredDependencies);
+        return (ignoredDependencies);
     }
 
     // **********
-    public void setIgnoredDependencies(ArrayList<String> moduleList)
-    {
+    public void setIgnoredDependencies(ArrayList<String> moduleList) {
         ignoredDependencies = moduleList;
     }
 
     // **********
-    public boolean isInIgnoredDependencies(String name)
-    {
+    public boolean isInIgnoredDependencies(String name) {
         boolean result = false;
 
-        for (int i = 0; i < getIgnoredDependencies().size() && ! result; i++)
-        {
+        for (int i = 0; i < getIgnoredDependencies().size() && !result; i++) {
             result = getIgnoredDependencies().get(i).equals(name);
         }
 
-        return(result);
+        return (result);
     }
 
     // **********************************************************************
-    public void setContinueFromModule(String continueFromModule)
-    {
+    public void setContinueFromModule(String continueFromModule) {
         this.continueFromModule = continueFromModule;
     }
 
     // **********
-    public String getContinueFromModule()
-    {
+    public String getContinueFromModule() {
         return continueFromModule;
     }
 
     // **********
-    public boolean isContinueFromModuleSatisfied(MavenProject module)
-    {
-        if (continueFromModule == null)
-        {
+    public boolean isContinueFromModuleSatisfied(MavenProject module) {
+        if (continueFromModule == null) {
             // property is not specified
             return true;
         }
@@ -233,18 +214,17 @@ public class PmpMojo extends AbstractPitMojo
 
     // **********************************************************************
     // ******** methods
-    public PmpMojo()
-    {
+    @Inject
+    public PmpMojo(RepositorySystem repositorySystem) {
         super(new RunPitStrategy(),
-          new DependencyFilter(PluginServices.makeForLoader(AbstractPitMojo.class.getClassLoader())),
-          PluginServices.makeForLoader(AbstractPitMojo.class.getClassLoader()),
-          new PmpNonEmptyProjectCheck());
+                new DependencyFilter(PluginServices.makeForLoader(AbstractPitMojo.class.getClassLoader())),
+                PluginServices.makeForLoader(AbstractPitMojo.class.getClassLoader()),
+                new PmpNonEmptyProjectCheck(), repositorySystem);
     }
 
     // **********************************************************************
     // ******** methods
-    public void updateTargetClasses()
-    {
+    public void updateTargetClasses() {
         // require(getProject() != null)
 
         ArrayList<String> classList;
@@ -254,27 +234,23 @@ public class PmpMojo extends AbstractPitMojo
         List<String> originaltargetClasses = getTargetClasses();
         ArrayList<String> targetClasses = new ArrayList<>();
 
-        if(originaltargetClasses != null && !originaltargetClasses.isEmpty()) {
+        if (originaltargetClasses != null && !originaltargetClasses.isEmpty()) {
             targetClasses.addAll(originaltargetClasses);
-        }
-        else {
+        } else {
             // If no list of target classes is given, add all classes in the project
             targetClasses.addAll(PmpContext.getClasses(getProject()));
         }
         // complete the target classes with other (dependencies) modules classes
         // and add target classes of all getArtifacts which are a project module
         moduleList = PmpContext.getInstance().getDependingModules(getProject());
-        for (int i = 0; i < moduleList.size(); i++)
-        {
+        for (int i = 0; i < moduleList.size(); i++) {
             MavenProject module = moduleList.get(i);
 
             if ((getTargetDependencies().size() == 0 ||
                  isInTargetDependencies(module.getArtifactId())) &&
-                ! isInIgnoredDependencies(module.getArtifactId()))
-            {
+                !isInIgnoredDependencies(module.getArtifactId())) {
                 classList = PmpContext.getClasses(module);
-                if (! classList.isEmpty())
-                {
+                if (!classList.isEmpty()) {
                     PmpContext.addNewStrings(targetClasses, classList);
                 }
             }
@@ -282,11 +258,9 @@ public class PmpMojo extends AbstractPitMojo
         setTargetClasses(targetClasses);
     }
 
-    public void updateTargetTests()
-    {
+    public void updateTargetTests() {
         List<String> targetTests = getTargetTests();
-        if (targetTests == null || targetTests.isEmpty())
-        {
+        if (targetTests == null || targetTests.isEmpty()) {
             setTargetTests(PmpContext.getTestClasses(getProject()));
         }
     }
@@ -297,21 +271,19 @@ public class PmpMojo extends AbstractPitMojo
     // ******** methods
     @Override
     protected Optional<CombinedStatistics> analyse()
-        throws MojoExecutionException
-    {
+            throws MojoExecutionException {
         Optional<CombinedStatistics> result = null;
 
         result = Optional.ofNullable(PmpContext.getInstance().getCurrentProject()
-            .execute());
+                .execute());
 
-        return(result);
+        return (result);
     }
 
     // **********************************************************************
     // called at the beginning of AbstractPitMojo.execute
     @Override
-    protected RunDecision shouldRun()
-    {
+    protected RunDecision shouldRun() {
         MethodThresholds.getInstance().setPartialyTestedThresold(partiallyTestedThreshold);
         MethodThresholds.getInstance().setPseudoTestedThresold(pseudoTestedThreshold);
 
@@ -321,7 +293,7 @@ public class PmpMojo extends AbstractPitMojo
         alreadyVisitedModules.add(projectName);
         // if no targetModules are specified, take all modules
         boolean isTargetModule = (getTargetModules() == null ||
-            getTargetModules().isEmpty() || isInTargetModules(projectName));
+                                  getTargetModules().isEmpty() || isInTargetModules(projectName));
         String message;
 
         PmpContext.getInstance().updateData(this);
@@ -333,42 +305,38 @@ public class PmpMojo extends AbstractPitMojo
         updateTargetTests();
 
         if (getProject().getPackaging().equals("pom") &&
-             myPmpProject.hasTestCompileSourceRoots() &&
-             myPmpProject.hasCompileSourceRoots())
+            myPmpProject.hasTestCompileSourceRoots() &&
+            myPmpProject.hasCompileSourceRoots())
         // force packaging to not pom before calling super.shouldRun
         {
             getProject().setPackaging("jar");
         }
         theDecision = super.shouldRun();
 
-        if (! isTargetModule)
-        {
+        if (!isTargetModule) {
             message = projectName + " is not a target module";
             theDecision.addReason(message);
         }
 
-        if (isInSkippedModules(projectName))
-        {
+        if (isInSkippedModules(projectName)) {
             message = projectName + " is a skipped module";
             theDecision.addReason(message);
         }
 
-        if (! isContinueFromModuleSatisfied(getProject()))
-        {
+        if (!isContinueFromModuleSatisfied(getProject())) {
             message = projectName + " is before " + continueFromModule +
-                " from which the execution shall be continued";
+                      " from which the execution shall be continued";
             theDecision.addReason(message);
         }
 
-        if (shouldDisplayOnly())
-        {
+        if (shouldDisplayOnly()) {
             message = "Display only option is true";
             theDecision.addReason(message);
         }
 
         // PitMojo displays the reasons about why we skip the project
 
-        return(theDecision);
+        return (theDecision);
     }
 
     @Override
